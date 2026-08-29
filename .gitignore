@@ -32,3 +32,9 @@ storybook-static
 openapi.yaml
 tsp-output
 src/api/types.ts
+
+# SQLite data
+server/data
+*.db
+*.db-shm
+*.db-wal

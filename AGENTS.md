@@ -49,12 +49,18 @@ Models:
    ```bash
    npm run generate-api-types
    ```
-2. Start the backend mock server on `http://localhost:4010`:
+2. Start the backend server on `http://localhost:4010`:
    ```bash
    npm run dev:backend
    ```
-   This is a stateful Node/Express mock server that implements the full OpenAPI contract,
-   including the 409 Conflict response on double-booking.
+   This is a stateful **Fastify + TypeScript** server (`server/src/`) that implements the full
+   OpenAPI contract, including the 409 Conflict response on double-booking. It serves interactive
+   **Swagger UI at `http://localhost:4010/docs`** (raw OpenAPI at `/docs/json`), generated from the
+   route schemas which mirror `api-spect.tsp`. Data is persisted in **SQLite** (`better-sqlite3`)
+   at `server/data/booking.db` — it survives restarts; delete that file (or the whole `server/data/`
+   directory) to reset to the seeded event types with no bookings. Override the path with the
+   `BOOKING_DB_PATH` env var (e.g. `:memory:` for ephemeral runs/tests).
+   The legacy Express mock (`server.js`) is kept for reference only.
 3. Start the Vite dev server on `http://localhost:5173` (or the configured port).
 
 Alternatively, run both the backend and the frontend with one command:
@@ -88,7 +94,10 @@ Storybook is configured for isolated component/page development without the back
 | Command | Purpose |
 |---------|---------|
 | `npm run dev` | Vite dev server |
-| `npm run dev:backend` | Backend mock server on `http://localhost:4010` |
+| `npm run dev:backend` | Fastify backend (watch mode) on `http://localhost:4010`, Swagger UI at `/docs` |
+| `npm run start:backend` | Fastify backend (no watch) |
+| `npm run build:backend` | Compile the backend to `server/dist` |
+| `npm run typecheck:backend` | Type-check the backend (`server/tsconfig.json`) |
 | `npm run dev:all` | Backend + Vite dev server |
 | `npm run prism:mock` | Standard Prism mock server on `http://localhost:4010` |
 | `npm run build` | Type-check + production build |
