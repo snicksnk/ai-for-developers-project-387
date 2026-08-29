@@ -16,6 +16,9 @@
     "typecheck": "tsc --noEmit",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "typecheck:e2e": "tsc -p e2e/tsconfig.json",
     "generate-api-types": "tsp compile api-spect.tsp --emit @typespec/openapi3 && cp tsp-output/@typespec/openapi3/openapi.yaml openapi.yaml && openapi-typescript openapi.yaml -o src/api/types.ts"
   },
   "dependencies": {
@@ -38,6 +41,7 @@
     "zustand": "^5.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@stoplight/prism-cli": "^5.15.11",
     "@storybook/addon-essentials": "^8.6.18",
     "@storybook/addon-interactions": "^8.6.18",
@@ -45,6 +49,7 @@
     "@storybook/react-vite": "^8.6.18",
     "@storybook/test": "^8.6.18",
     "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^26.4.0",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.1",
     "@typespec/compiler": "^1.15.0",
