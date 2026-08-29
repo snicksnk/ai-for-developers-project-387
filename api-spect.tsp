@@ -76,7 +76,7 @@ interface GuestBookings {
   @get list(): Booking[];
 
   @summary("Создать новое бронирование (занятие слота)")
-  @post create(@body booking: BookingCreate): Booking;
+  @post create(@body booking: BookingCreate): Booking | Http.ConflictResponse;
 }
 
 @tag("Owner")

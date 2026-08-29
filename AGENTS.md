@@ -49,11 +49,23 @@ Models:
    ```bash
    npm run generate-api-types
    ```
-2. Start the Prism mock server on `http://localhost:4010`:
+2. Start the backend mock server on `http://localhost:4010`:
    ```bash
-   prism mock openapi.yaml
+   npm run dev:backend
    ```
+   This is a stateful Node/Express mock server that implements the full OpenAPI contract,
+   including the 409 Conflict response on double-booking.
 3. Start the Vite dev server on `http://localhost:5173` (or the configured port).
+
+Alternatively, run both the backend and the frontend with one command:
+```bash
+npm run dev:all
+```
+
+A standard Prism mock (stateless, no occupancy enforcement) is also available for contract testing:
+```bash
+npm run prism:mock
+```
 
 Frontend `apiClient` base URL is configured in `src/api/client.ts` and points to `http://localhost:4010`.
 
@@ -76,6 +88,9 @@ Storybook is configured for isolated component/page development without the back
 | Command | Purpose |
 |---------|---------|
 | `npm run dev` | Vite dev server |
+| `npm run dev:backend` | Backend mock server on `http://localhost:4010` |
+| `npm run dev:all` | Backend + Vite dev server |
+| `npm run prism:mock` | Standard Prism mock server on `http://localhost:4010` |
 | `npm run build` | Type-check + production build |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run storybook` | Storybook dev server |
