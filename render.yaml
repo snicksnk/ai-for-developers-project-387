@@ -1,0 +1,12 @@
+# Render Blueprint — deploys the Docker image as a public web service.
+# Render injects $PORT at runtime; the app reads it in server/src/index.ts.
+services:
+  - type: web
+    name: booking-calendar
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /event-types
+    envVars:
+      - key: NODE_ENV
+        value: production

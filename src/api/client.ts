@@ -1,6 +1,10 @@
 import type { paths } from "@/api/types";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4010";
+// `VITE_API_BASE_URL` unset -> talk to the local dev backend.
+// Set to "" (the production Docker build) -> same-origin relative requests,
+// since one container serves both the frontend and the API.
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4010";
 
 export const API_BASE = API_BASE_URL;
 

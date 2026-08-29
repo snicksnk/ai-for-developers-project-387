@@ -1,0 +1,17 @@
+node_modules
+dist
+server/dist
+server/data
+storybook-static
+test-results
+playwright-report
+blob-report
+.git
+.github
+*.db
+*.db-shm
+*.db-wal
+*.log
+.DS_Store
+e2e
+tsp-output
