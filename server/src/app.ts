@@ -19,7 +19,12 @@ export async function buildApp(): Promise<FastifyInstance> {
     },
   });
 
-  await app.register(cors, { origin: true });
+  // @fastify/cors only allows GET,HEAD,POST by default — the API also needs
+  // PUT (update event type) and DELETE (remove event type).
+  await app.register(cors, {
+    origin: true,
+    methods: ["GET", "HEAD", "POST", "PUT", "DELETE"],
+  });
 
   // Register shared model schemas so both validation and Swagger can $ref them.
   for (const schema of sharedSchemas) {
