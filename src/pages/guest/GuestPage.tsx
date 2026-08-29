@@ -25,6 +25,7 @@ export interface GuestPageViewProps {
   onBook: (slot: AvailableSlot) => void;
   isBooking: boolean;
   booked: Booking | null;
+  onReset: () => void;
   eventTypesError: Error | null;
   slotsError: Error | null;
   bookingError: Error | null;
@@ -42,6 +43,7 @@ export function GuestPageView({
   onBook,
   isBooking,
   booked,
+  onReset,
   eventTypesError,
   slotsError,
   bookingError,
@@ -56,12 +58,17 @@ export function GuestPageView({
       <h1 className="mb-6 text-2xl font-semibold">Book an appointment</h1>
 
       {booked ? (
-        <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-green-900">
-          <p className="font-medium">Booking confirmed</p>
-          <p className="text-sm">
-            {booked.eventType.title} on{" "}
-            {dayjs.utc(booked.startTime).format("MMMM D, YYYY HH:mm")} UTC
-          </p>
+        <div className="space-y-4">
+          <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-green-900">
+            <p className="font-medium">Booking confirmed</p>
+            <p className="text-sm">
+              {booked.eventType.title} on{" "}
+              {dayjs.utc(booked.startTime).format("MMMM D, YYYY HH:mm")} UTC
+            </p>
+          </div>
+          <Button variant="outline" onClick={onReset}>
+            ← Book another appointment
+          </Button>
         </div>
       ) : (
         <div className="space-y-8">
@@ -174,8 +181,12 @@ export function GuestPage() {
     availabilityDate
   );
 
-  const { mutate: createBooking, isPending: isBooking, error: bookingError } =
-    useCreateBooking();
+  const {
+    mutate: createBooking,
+    isPending: isBooking,
+    error: bookingError,
+    reset: resetBookingMutation,
+  } = useCreateBooking();
 
   const handleBook = (slot: AvailableSlot) => {
     if (!selectedEventType) return;
@@ -190,6 +201,13 @@ export function GuestPage() {
     );
   };
 
+  const handleReset = () => {
+    setBooked(null);
+    setSelectedEventType(null);
+    setSelectedDate(null);
+    resetBookingMutation();
+  };
+
   return (
     <GuestPageView
       eventTypes={eventTypes}
@@ -201,6 +219,7 @@ export function GuestPage() {
       onBook={handleBook}
       isBooking={isBooking}
       booked={booked}
+      onReset={handleReset}
       eventTypesError={eventTypesError}
       slotsError={slotsError}
       bookingError={bookingError}

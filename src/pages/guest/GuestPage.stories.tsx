@@ -61,6 +61,11 @@ function InteractiveView(args: Partial<GuestPageViewProps>) {
       }}
       isBooking={false}
       booked={booked}
+      onReset={() => {
+        setBooked(null);
+        setSelectedEventType(null);
+        setSelectedDate(null);
+      }}
       eventTypesError={null}
       slotsError={null}
       bookingError={null}
