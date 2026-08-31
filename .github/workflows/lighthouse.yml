@@ -1,0 +1,158 @@
+name: Lighthouse
+
+# Regular, scheduled quality check.
+#   * schedule         — runs every night; the report is waiting for the team in the morning.
+#   * workflow_dispatch — the same job can be started by hand from the Actions tab
+#                         (optionally against an already-deployed URL).
+#
+# Docs:
+#   https://opencode.ai/docs/github/         (schedule example)
+#   https://docs.github.com/actions/using-workflows/events-that-trigger-workflows
+#   https://developer.chrome.com/docs/lighthouse/overview/
+on:
+  schedule:
+    # 02:00 UTC ≈ 05:00 MSK — nightly, so the report is ready before work starts.
+    # GitHub may delay scheduled runs by a few minutes under load. Adjust the
+    # cron here if the team works in a different timezone.
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: "URL to audit. Leave empty to build the app and audit it locally."
+        required: false
+        default: ""
+
+# One report at a time; a manual run supersedes an in-flight scheduled one.
+concurrency:
+  group: lighthouse
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    env:
+      # Routes audited when building locally (server serves the SPA + API on one port).
+      LOCAL_BASE_URL: "http://localhost:4010"
+      LOCAL_PATHS: "/ /owner"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # ---- Build + serve the app locally (skipped when auditing a remote URL) ----
+      - name: Build the app
+        if: ${{ inputs.target_url == '' }}
+        env:
+          # Frontend and API are served same-origin, like the Docker image.
+          VITE_API_BASE_URL: ""
+        run: |
+          npm run generate-api-types
+          npm run build
+          npm run build:backend
+          cp -r dist server/dist/public
+
+      - name: Start the server
+        if: ${{ inputs.target_url == '' }}
+        env:
+          NODE_ENV: production
+          PORT: "4010"
+          BOOKING_DB_PATH: ":memory:"
+        run: |
+          node server/dist/index.js &
+          echo "SERVER_PID=$!" >> "$GITHUB_ENV"
+          for i in $(seq 1 60); do
+            if curl -sSf -o /dev/null "$LOCAL_BASE_URL/"; then
+              echo "server is up after ${i}s"; exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::server did not come up on $LOCAL_BASE_URL"; exit 1
+
+      # ---- Resolve the list of URLs to audit ----
+      # target_url comes from a manual dispatch input — pass it through the
+      # environment (never interpolate ${{ }} into the shell) to avoid injection.
+      - name: Resolve target URLs
+        id: targets
+        env:
+          TARGET_URL: ${{ inputs.target_url }}
+        run: |
+          if [ -n "$TARGET_URL" ]; then
+            echo "urls=$TARGET_URL" >> "$GITHUB_OUTPUT"
+          else
+            urls=""
+            for p in $LOCAL_PATHS; do urls="$urls $LOCAL_BASE_URL$p"; done
+            echo "urls=$(echo $urls | xargs)" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ---- Run the Lighthouse CLI, one report per URL ----
+      - name: Run Lighthouse
+        env:
+          TARGET_URLS: ${{ steps.targets.outputs.urls }}
+        run: |
+          mkdir -p lighthouse-report
+          i=0
+          for url in $TARGET_URLS; do
+            i=$((i + 1))
+            name="lighthouse-report/$(printf '%02d' $i)"
+            echo "::group::Lighthouse — $url"
+            # With multiple --output formats Lighthouse appends ".report.<ext>"
+            # to this base path, producing e.g. "01.report.html" / "01.report.json".
+            npx --yes lighthouse "$url" \
+              --output=html --output=json \
+              --output-path="$name" \
+              --chrome-flags="--headless=new --no-sandbox --disable-gpu" \
+              --preset=desktop \
+              --max-wait-for-load=45000 \
+              --only-categories=performance,accessibility,best-practices,seo
+            echo "::endgroup::"
+          done
+          ls -la lighthouse-report
+
+      - name: Build Markdown summary
+        id: summary
+        if: always()
+        run: |
+          mkdir -p lighthouse-report
+          node scripts/lighthouse-summary.mjs lighthouse-report lighthouse-report/summary.md
+          cat lighthouse-report/summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      # ---- Persist the report so the team can read it in the morning ----
+      - name: Upload report artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighthouse-report-${{ github.run_number }}
+          path: lighthouse-report/
+          retention-days: 30
+
+      # ---- Morning report: open a tracking issue with the scores + a checklist ----
+      - name: Open report issue
+        if: ${{ always() && github.event_name == 'schedule' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('lighthouse-report/summary.md', 'utf8');
+            const date = new Date().toISOString().slice(0, 10);
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Lighthouse report — ${date}`,
+              labels: ['lighthouse'],
+              body: `${body}\n\n---\n[Full HTML/JSON report artifact](${runUrl}) · workflow: \`.github/workflows/lighthouse.yml\``,
+            });
+
+      - name: Stop the server
+        if: ${{ always() && env.SERVER_PID != '' }}
+        run: kill "$SERVER_PID" || true
