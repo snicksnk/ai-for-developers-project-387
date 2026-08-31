@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { DatePicker } from "@mantine/dates";
@@ -50,8 +51,8 @@ export function GuestPageView({
   isLoadingEventTypes,
   isLoadingSlots,
 }: GuestPageViewProps) {
-  const today = dayjs().startOf("day").toDate();
-  const maxDate = dayjs().add(13, "day").endOf("day").toDate();
+  const today = dayjs.utc().startOf("day").toDate();
+  const maxDate = dayjs.utc().add(13, "day").endOf("day").toDate();
 
   return (
     <div className="mx-auto max-w-2xl p-6">
@@ -63,7 +64,7 @@ export function GuestPageView({
             <p className="font-medium">Booking confirmed</p>
             <p className="text-sm">
               {booked.eventType.title} on{" "}
-              {dayjs.utc(booked.startTime).format("MMMM D, YYYY HH:mm")} UTC
+              {dayjs(booked.startTime).format("MMMM D, YYYY HH:mm")}
             </p>
           </div>
           <Button variant="outline" onClick={onReset}>
@@ -156,6 +157,7 @@ export function GuestPageView({
 }
 
 export function GuestPage() {
+  const queryClient = useQueryClient();
   const [selectedEventType, setSelectedEventType] = useState<EventType | null>(
     null
   );
@@ -196,7 +198,11 @@ export function GuestPage() {
         startTime: dayjs.utc(slot.startTime).toISOString(),
       },
       {
-        onSuccess: (booking) => setBooked(booking),
+        onSuccess: (booking) => {
+          setBooked(booking);
+          queryClient.invalidateQueries({ queryKey: ["availability"] });
+          queryClient.invalidateQueries({ queryKey: ["schedule"] });
+        },
       }
     );
   };
