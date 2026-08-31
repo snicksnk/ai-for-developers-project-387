@@ -25,6 +25,11 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
+      - name: Configure git identity for opencode commits
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
       - name: Check OPENCODE_API_KEY is set
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
