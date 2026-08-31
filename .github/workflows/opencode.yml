@@ -41,5 +41,7 @@ jobs:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          model: opencode/kimi-k2.7-code
+          # kimi-k2.7-code is listed on Zen but its upstream currently 404s
+          # ([NOT_FOUND] ... not deployed). kimi-k2.6 is the working same-family model.
+          model: opencode/kimi-k2.6
           use_github_token: true
