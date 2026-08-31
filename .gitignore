@@ -44,3 +44,8 @@ server/data
 /playwright-report
 /blob-report
 /playwright/.cache
+
+# Lighthouse
+/lighthouse-report
+*.report.html
+*.report.json
