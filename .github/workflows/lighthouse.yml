@@ -11,10 +11,10 @@ name: Lighthouse
 #   https://developer.chrome.com/docs/lighthouse/overview/
 on:
   schedule:
-    # 02:00 UTC ≈ 05:00 MSK — nightly, so the report is ready before work starts.
-    # GitHub may delay scheduled runs by a few minutes under load. Adjust the
-    # cron here if the team works in a different timezone.
-    - cron: "0 2 * * *"
+    # 14:00 UTC = 17:00 MSK — temporarily set to daytime to verify the workflow
+    # end-to-end. Switch back to a nightly slot (e.g. "0 2 * * *" = 05:00 MSK)
+    # once it's confirmed working. GitHub may delay scheduled runs by a few minutes.
+    - cron: "0 14 * * *"
   workflow_dispatch:
     inputs:
       target_url:
