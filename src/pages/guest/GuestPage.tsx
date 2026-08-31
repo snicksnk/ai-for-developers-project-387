@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { DatePicker } from "@mantine/dates";
@@ -157,7 +156,6 @@ export function GuestPageView({
 }
 
 export function GuestPage() {
-  const queryClient = useQueryClient();
   const [selectedEventType, setSelectedEventType] = useState<EventType | null>(
     null
   );
@@ -200,8 +198,6 @@ export function GuestPage() {
       {
         onSuccess: (booking) => {
           setBooked(booking);
-          queryClient.invalidateQueries({ queryKey: ["availability"] });
-          queryClient.invalidateQueries({ queryKey: ["schedule"] });
         },
       }
     );

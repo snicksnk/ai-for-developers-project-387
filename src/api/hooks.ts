@@ -1,8 +1,8 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import type { components } from "@/api/types";
-import { apiGet, apiPost, apiPut, apiDelete } from "@/api/client";
+import { apiGet, apiPost, apiPut, apiDelete, ApiError } from "@/api/client";
 
 dayjs.extend(utc);
 
@@ -38,8 +38,19 @@ export function useAvailability(
 }
 
 export function useCreateBooking() {
+  const queryClient = useQueryClient();
   return useMutation<Booking, Error, BookingCreate>({
     mutationFn: (body) => apiPost("/bookings", body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["availability"] });
+      queryClient.invalidateQueries({ queryKey: ["schedule"] });
+    },
+    onError: (error) => {
+      if (error instanceof ApiError && error.status === 409) {
+        queryClient.invalidateQueries({ queryKey: ["availability"] });
+        queryClient.invalidateQueries({ queryKey: ["schedule"] });
+      }
+    },
   });
 }
 

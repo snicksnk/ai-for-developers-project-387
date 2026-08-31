@@ -45,7 +45,8 @@ test("double-booking the same slot is rejected for whoever loses the race", asyn
 
     const slotA = pageA.getByRole("button", { name: TIME_SLOT }).first();
     const slotB = pageB.getByRole("button", { name: TIME_SLOT }).first();
-    await expect(slotA).toHaveText((await slotB.textContent()) ?? "");
+    const slotText = await slotB.textContent();
+    await expect(slotA).toHaveText(slotText ?? "");
 
     // Both guests race for the exact same time slot.
     await Promise.all([slotA.click(), slotB.click()]);
@@ -64,6 +65,12 @@ test("double-booking the same slot is rejected for whoever loses the race", asyn
     // Exactly one guest gets the slot; the other sees the 409 conflict.
     expect(aWon).not.toBe(bWon);
     await expect(aWon ? conflictOnB : conflictOnA).toBeVisible();
+
+    // After 409, availability cache is invalidated and the slot list refreshes.
+    const loserPage = aWon ? pageB : pageA;
+    await expect(
+      loserPage.getByRole("button", { name: slotText ?? "" })
+    ).not.toBeVisible();
 
     const bookings = await pageA.request.get(`${BACKEND_URL}/bookings`).then((r) => r.json());
     expect(bookings.filter((b: { eventType: { title: string } }) => b.eventType.title === "Deep dive")).toHaveLength(1);
