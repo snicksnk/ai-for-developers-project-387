@@ -25,6 +25,16 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
+      - name: Check OPENCODE_API_KEY is set
+        env:
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+        run: |
+          if [ -z "$OPENCODE_API_KEY" ]; then
+            echo "::error::OPENCODE_API_KEY repo secret is missing or empty. Add it under Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          echo "OPENCODE_API_KEY is set (${#OPENCODE_API_KEY} chars)."
+
       - name: Run OpenCode
         uses: anomalyco/opencode/github@latest
         env:
